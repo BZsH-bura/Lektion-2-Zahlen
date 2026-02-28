@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Német Számok: Rejtvény és Bingó</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .section {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+        
+        /* KERESZTREJTVÉNY STÍLUSOK */
+        .puzzle-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .number-box {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            width: 80px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .puzzle-input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .puzzle-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724;
+        }
+        .wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+        }
+        
+        /* BINGÓ STÍLUSOK */
+        .bingo-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .bingo-card {
+            border: 4px solid #2c3e50;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+            width: 300px;
+        }
+        .bingo-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #e74c3c;
+        }
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        .bingo-cell {
+            background-color: #ecf0f1;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        /* Ha rákattintasz a bingóra (digitálisan), jelölje be */
+        .bingo-cell.marked {
+            background-color: #f1c40f;
+            color: white;
+            border-color: #f39c12;
+        }
+
+        /* GOMBOK */
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+        .btn-check {
+            background-color: #27ae60;
+            color: white;
+        }
+        .btn-check:hover { background-color: #2ecc71; }
+        
+        .btn-bingo {
+            background-color: #e67e22;
+            color: white;
+        }
+        .btn-bingo:hover { background-color: #d35400; }
+
+        .solution-text {
+            display: none;
+            margin-left: 10px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+        .show-sol { display: inline; }
+
+        @media print {
+            button { display: none; }
+            .section { box-shadow: none; border: 1px solid #ccc; page-break-after: always; }
+            h1 { font-size: 20px; }
+            .correct { background-color: white !important; border-color: #ccc !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🇩🇪 Német Számok Gyakorlása</h1>
+
+    <div class="section">
+        <h2>1. Írd le a számokat betűvel! (Schreib die Zahlen!)</h2>
+        <p>Írd be a szám nevét németül a mezőbe. Figyelj, kisbetűvel írd, egybe!</p>
+        
+        <div id="puzzle-container">
+            </div>
+
+        <button class="btn-check" onclick="checkPuzzle()">Ellenőrzés (Überprüfen)</button>
+    </div>
+
+    <div class="section">
+        <h2>2. Zahlen-Bingo (Sablon)</h2>
+        <p>Nyomd meg a narancssárga gombot új számok generálásához! (Nyomtatáshoz: Ctrl+P)</p>
+        
+        <button class="btn-bingo" onclick="generateBingo()">Új számok generálása (Neue Zahlen)</button>
+
+        <div class="bingo-container">
+            <div class="bingo-card">
+                <div class="bingo-header">BINGO A</div>
+                <div class="bingo-grid" id="bingo-grid-1">
+                    </div>
+            </div>
+
+            <div class="bingo-card">
+                <div class="bingo-header">BINGO B</div>
+                <div class="bingo-grid" id="bingo-grid-2">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ADATOK A REJTVÉNYHEZ ---
+        const puzzleData = [
+            { num: 25, ans: "fünfundzwanzig" },
+            { num: 40, ans: "vierzig" },
+            { num: 76, ans: "sechsundsiebzig" },
+            { num: 99, ans: "neunundneunzig" },
+            { num: 100, ans: "einhundert" },
+            { num: 112, ans: "einhundertzwölf" },
+            { num: 350, ans: "dreihundertfünfzig" },
+            { num: 800, ans: "achthundert" },
+            { num: 1000, ans: "eintausend" },
+            { num: 2024, ans: "zweitausendvierundzwanzig" },
+            { num: 5555, ans: "fünftausendfünfhundertfünfundfünfzig" },
+            { num: 9000, ans: "neuntausend" }
+        ];
+
+        // Rejtvény generálása
+        const puzzleContainer = document.getElementById('puzzle-container');
+        puzzleData.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'puzzle-row';
+            row.innerHTML = `
+                <div class="number-box">${item.num}</div>
+                <input type="text" class="puzzle-input" data-ans="${item.ans}" placeholder="...">
+                <span class="solution-text">${item.ans}</span>
+            `;
+            puzzleContainer.appendChild(row);
+        });
+
+        // Rejtvény ellenőrzése
+        function checkPuzzle() {
+            const inputs = document.querySelectorAll('.puzzle-input');
+            inputs.forEach(input => {
+                const correct = input.getAttribute('data-ans');
+                const val = input.value.toLowerCase().trim().replace(/\s/g, ''); // szóközöket kivesszük
+                const span = input.nextElementSibling;
+
+                if(val === correct) {
+                    input.classList.add('correct');
+                    input.classList.remove('wrong');
+                    span.classList.remove('show-sol');
+                } else {
+                    input.classList.add('wrong');
+                    input.classList.remove('correct');
+                    span.classList.add('show-sol');
+                }
+            });
+        }
+
+        // --- BINGÓ LOGIKA ---
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1) ) + min;
+        }
+
+        function fillBingoGrid(gridId) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = ""; // Törlés
+            const numbers = new Set();
+            
+            // 9 egyedi szám generálása
+            while(numbers.size < 9) {
+                // Kicsit súlyozzuk, hogy legyenek kisebb és nagyobb számok is
+                let n;
+                if(numbers.size < 3) n = getRandomNumber(20, 100);       // 3 kicsi
+                else if(numbers.size < 6) n = getRandomNumber(101, 1000); // 3 közepes
+                else n = getRandomNumber(1001, 10000);                   // 3 nagy
+                numbers.add(n);
+            }
+
+            numbers.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'bingo-cell';
+                cell.textContent = num;
+                // Kattintásra jelölés (ha gépen játsszák)
+                cell.onclick = function() {
+                    this.classList.toggle('marked');
+                };
+                grid.appendChild(cell);
+            });
+        }
+
+        function generateBingo() {
+            fillBingoGrid('bingo-grid-1');
+            fillBingoGrid('bingo-grid-2');
+        }
+
+        // Induláskor generáljon egyet
+        generateBingo();
+
+    </script>
+</body>
+</html>
